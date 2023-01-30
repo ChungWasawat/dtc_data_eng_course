@@ -1,3 +1,4 @@
 csv/
-rising-field-339518-7d0747bc618b.json
 ny_taxi_postgres_data/
+key/
+variables.tf
