@@ -12,7 +12,7 @@ def ingest_data(user, password, host, port, db, table_name, url):
     # the backup files are gzipped, and it's important to keep the correct extension
     # for pandas to be able to open the file
     if url.endswith('.csv.gz'):
-        csv_name = 'yellow_tripdata_2021-01.csv.gz'
+        csv_name = 'yellow_tripdata_2020-01.csv.gz'
     else:
         csv_name = 'output.csv'
 
@@ -59,6 +59,6 @@ if __name__ == '__main__':
     port = "5433"
     db = "ny_taxi"
     table_name = "yellow_taxi_trips"
-    csv_url = "https://github.com/DataTalksClub/nyc-tlc-data/releases/download/yellow/yellow_tripdata_2021-01.csv.gz"
+    csv_url = "https://github.com/DataTalksClub/nyc-tlc-data/releases/download/yellow/yellow_tripdata_2020-01.csv.gz"
 
     ingest_data(user, password, host, port, db, table_name, csv_url)
