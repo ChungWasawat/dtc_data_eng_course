@@ -16,7 +16,7 @@ def extract_data(url: str):
     # the backup files are gzipped, and it's important to keep the correct extension
     # for pandas to be able to open the file
     if url.endswith('.csv.gz'):
-        csv_name = 'yellow_tripdata_2020-01.csv.gz'
+        csv_name = 'green_tripdata_2020-01.csv.gz'
     else:
         csv_name = 'output.csv'
     
@@ -26,8 +26,8 @@ def extract_data(url: str):
 
     df = next(df_iter)
 
-    df.tpep_pickup_datetime = pd.to_datetime(df.tpep_pickup_datetime)
-    df.tpep_dropoff_datetime = pd.to_datetime(df.tpep_dropoff_datetime)
+    df.lpep_pickup_datetime = pd.to_datetime(df.lpep_pickup_datetime)
+    df.lpep_dropoff_datetime = pd.to_datetime(df.lpep_dropoff_datetime)
 
     return df
 
@@ -51,13 +51,13 @@ def log_subflow(table_name: str):
     print(f"Logging Subflow for: {table_name}")
 
 @flow(name="Ingest Data")
-def main_flow(table_name: str = "yellow_taxi_trips"):
+def main_flow(table_name: str = "green_taxi_trips"):
 
-    csv_url = "https://github.com/DataTalksClub/nyc-tlc-data/releases/download/yellow/yellow_tripdata_2020-01.csv.gz"
+    csv_url = "https://github.com/DataTalksClub/nyc-tlc-data/releases/download/green/green_tripdata_2020-01.csv.gz"
     log_subflow(table_name)
     raw_data = extract_data(csv_url)
     data = transform_data(raw_data)
     load_data(table_name, data)
 
 if __name__ == '__main__':
-    main_flow(table_name = "yellow_trips")
+    main_flow(table_name = "green_trips")
