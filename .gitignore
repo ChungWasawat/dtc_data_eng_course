@@ -1,4 +1,5 @@
 csv/
 ny_taxi_postgres_data/
 key/
+data/
 variables.tf
