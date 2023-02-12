@@ -18,10 +18,14 @@ def fetch(dataset_url: str) -> pd.DataFrame:
 
 
 @task(log_prints=True)
-def clean(df: pd.DataFrame) -> pd.DataFrame:
+def clean(df: pd.DataFrame, colour: str) -> pd.DataFrame:
     """Fix dtype issues"""
-    df["tpep_pickup_datetime"] = pd.to_datetime(df["tpep_pickup_datetime"])
-    df["tpep_dropoff_datetime"] = pd.to_datetime(df["tpep_dropoff_datetime"])
+    if colour == "yellow":
+        df["tpep_pickup_datetime"] = pd.to_datetime(df["tpep_pickup_datetime"])
+        df["tpep_dropoff_datetime"] = pd.to_datetime(df["tpep_dropoff_datetime"])
+    elif colour == "green":
+        df["lpep_pickup_datetime"] = pd.to_datetime(df["lpep_pickup_datetime"])
+        df["lpep_dropoff_datetime"] = pd.to_datetime(df["lpep_dropoff_datetime"])
     print(df.head(2))
     print(f"columns: {df.dtypes}")
     print(f"rows: {len(df)}")
@@ -31,16 +35,20 @@ def clean(df: pd.DataFrame) -> pd.DataFrame:
 @task()
 def write_local(df: pd.DataFrame, color: str, dataset_file: str) -> Path:
     """Write DataFrame out locally as parquet file"""
+    local_path = Path.cwd()
     path = Path(f"data/{color}/{dataset_file}.parquet")
-    df.to_parquet(path, compression="gzip")
-    return path
+    path2 = local_path / path
+
+    df.to_parquet(path2, compression="gzip")
+    return path2
 
 
 @task()
-def write_gcs(path: Path) -> None:
+def write_gcs(path: Path, colour: str, dataset_file: str) -> None:
     """Upload local parquet file to GCS"""
-    gcs_block = GcsBucket.load("zoom-gcs")
-    gcs_block.upload_from_path(from_path=path, to_path=path)
+    gcs_block = GcsBucket.load("dtcde-prefect-gcs")
+    gBucket_path = f"data/{colour}/{dataset_file}.parquet"
+    gcs_block.upload_from_path(from_path=path, to_path=gBucket_path)
     return
 
 
@@ -51,9 +59,9 @@ def etl_web_to_gcs(year: int, month: int, color: str) -> None:
     dataset_url = f"https://github.com/DataTalksClub/nyc-tlc-data/releases/download/{color}/{dataset_file}.csv.gz"
 
     df = fetch(dataset_url)
-    df_clean = clean(df)
+    df_clean = clean(df, color)
     path = write_local(df_clean, color, dataset_file)
-    write_gcs(path)
+    write_gcs(path, color, dataset_file)
 
 
 @flow()
