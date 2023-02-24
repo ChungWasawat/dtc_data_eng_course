@@ -50,7 +50,9 @@ def write_gcs(path: Path, colour: str, dataset_file: str) -> None:
     """Upload local parquet file to GCS"""
     gcs_block = GcsBucket.load("dtcde-prefect-gcs")
     gBucket_path = f"data/{colour}/{dataset_file}.parquet"
-    gcs_block.upload_from_path(from_path=path, to_path=gBucket_path)
+
+    local_path = Path(f"D:/data/{color}/{dataset_file}.parquet")
+    gcs_block.upload_from_path(from_path=local_path, to_path=gBucket_path)
     return
 
 
