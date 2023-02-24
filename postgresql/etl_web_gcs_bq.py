@@ -38,6 +38,8 @@ def clean(df: pd.DataFrame, colour: str) -> pd.DataFrame:
 
         df["pickup_datetime"] = pd.to_datetime(df["pickup_datetime"])
         df["dropOff_datetime"] = pd.to_datetime(df["dropOff_datetime"])
+
+
     
     if color == "yellow" or color == "green":
         df["VendorID"] = df["VendorID"].astype('Int64')
@@ -85,11 +87,15 @@ def extract_from_gcs(color: str, year: int, month: int) -> Path:
 @task()
 def transform(path: Path, colour: str) -> pd.DataFrame:
     """Data cleaning example"""
-    if colour == "yellow" or 'green':
-        df = pd.read_parquet(path)
+    df = pd.read_parquet(path)
+    if colour != "fhv":
         print(f"pre: missing passenger count: {df['passenger_count'].isna().sum()}")
         df["passenger_count"].fillna(0, inplace=True)
         print(f"post: missing passenger count: {df['passenger_count'].isna().sum()}")
+    else:
+        print(f"pre: null SR flag count: {df['SR_Flag'].isna().sum()}")
+        df["SR_Flag"].fillna(0, inplace=True)
+        print(f"post: null SR flag count: {df['SR_Flag'].isna().sum()}")
     return df
 
 @task()
@@ -114,18 +120,32 @@ def write_bq_table(df: pd.DataFrame, colour: str) -> None:
 
 
 @task()
-def write_bq_xtable(colour: str) -> None:
+def write_bq_xtable(colour: str, years: int) -> None:
     """Write DataFrame to BiqQuery as external table"""
-    with BigQueryWarehouse.load("bigquery") as warehouse:
-        create_operation = '''
-        CREATE OR REPLACE EXTERNAL TABLE `mp-dtc-data-eng.eu_dtcDE_zoomcamp.external_fhv`
-        OPTIONS (
-            format = 'CSV',
-            uris = ['gs://nyc-tl-data/trip data/fhv_tripdata_2019-*.csv']
-        );
-        '''
-        warehouse.execute(create_operation)
+    # only 2019 and 2020
+    # edit service type before running
+    if years == 1:
+        with BigQueryWarehouse.load("x-fhv") as warehouse:
+            create_operation = '''
+            CREATE OR REPLACE EXTERNAL TABLE `mp-dtc-data-eng.trips_data_all.external_fhv`
+            OPTIONS (
+                format = 'parquet',
+                uris = ['gs://dtc_data_lake_mp-dtc-data-eng/data/fhv/fhv_tripdata_2019-*.parquet'] 
+            );
+            '''
+            warehouse.execute(create_operation)
+    elif years == 2:
+        with BigQueryWarehouse.load("x-fhv") as warehouse:
+            create_operation = '''
+            CREATE OR REPLACE EXTERNAL TABLE `mp-dtc-data-eng.eu_dtcDE_zoomcamp.green`
+            OPTIONS (
+                format = 'parquet',
+                uris = ['gs://dtc_data_lake_mp-dtc-data-eng/data/green/green_tripdata_2019-*.parquet', 'gs://dtc_data_lake_mp-dtc-data-eng/data/green/green_tripdata_2020-*.parquet'] 
+            );
+            '''
+            warehouse.execute(create_operation)
 
+        # maybe used later for insert parameter to bq        
         # insert_operation = '''
         # INSERT INTO mydataset.mytable (col1, col2, col3) VALUES (%s, %s, %s)
         # '''
@@ -141,7 +161,7 @@ def write_bq_xtable(colour: str) -> None:
 
 ############################################# flow
 @flow()
-def etl_web_to_bq(year: int, month: int, color: str, func: int) -> None:
+def etl_web_to_bq(year: int, month: int, color: str, func: int, fyears:int) -> None:
     """The main ETL function"""
     dataset_file = f"{color}_tripdata_{year}-{month:02}"
     dataset_url = f"https://github.com/DataTalksClub/nyc-tlc-data/releases/download/{color}/{dataset_file}.csv.gz"
@@ -159,14 +179,16 @@ def etl_web_to_bq(year: int, month: int, color: str, func: int) -> None:
         write_bq_table(df, color)
     # bq x table
     elif func == 2:
-        write_bq_xtable(color)
+        write_bq_xtable(color, fyears)
 
 @flow()
 def etl_parent_w2bq_flow(
-    months: list[int] = [1, 2], year: int = 2021, color: str = "yellow", func: int = 0
-):
+    months: list[int] = [1, 2], year: int = 2021, color: str = "yellow", func: int = 0, fyears: int = 1
+    ):
     for month in months:
-        etl_web_to_bq(year, month, color, func)
+        etl_web_to_bq(year, month, color, func, fyears)
+        if func ==2:
+            break
 
 if __name__ == "__main__":
     color = "fhv"
@@ -174,5 +196,7 @@ if __name__ == "__main__":
     months = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
     year = 2019
     # func = 0(web to gcs) / 1(gcs to bq) / 2(bq x table)
-    func = 0
-    etl_parent_w2bq_flow(months, year, color, func)
+    func = 1
+    # for create external table
+    fyears = 2
+    etl_parent_w2bq_flow(months, year, color, func, fyears)
