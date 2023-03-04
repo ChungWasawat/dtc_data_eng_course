@@ -3,6 +3,7 @@ ny_taxi_postgres_data/
 key/
 data/
 variables.tf
+fhvhv/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
