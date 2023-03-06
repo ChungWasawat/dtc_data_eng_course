@@ -4,6 +4,7 @@ key/
 data/
 variables.tf
 fhvhv/
+zones/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
