@@ -5,6 +5,7 @@ data/
 variables.tf
 fhvhv/
 zones/
+datatalksclub.stream.v2-data/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
