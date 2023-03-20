@@ -13,8 +13,11 @@ file = open(INPUT_DATA_PATH_F)
 csvreader = csv.reader(file)
 header = next(csvreader)
 for row in csvreader:
-    key = {"vendorId": int(row[0])}
-    value = {"vendorId": int(row[0]), "passenger_count": int(row[3]), "trip_distance": float(row[4]), "payment_type": int(row[9]), "total_amount": float(row[16])}
-    producer.send(KAFKA_TOPIC_F, value=value, key=key)
-    print(f"producing data {key}")
-    sleep(1)
+    # there are some rows with empty pu_location_id
+    if row[3] != "":
+        key = {"pu_location_id": int(row[3])}
+        value = {"dispatching_base_num": str(row[0]), "pu_location_id": int(row[3]), "do_location_id": int(row[4])}
+        producer.send(KAFKA_TOPIC_F, value=value, key=key)
+        print(f"producing data {int(row[3])}")
+        sleep(1)
+    
