@@ -14,10 +14,11 @@ csvreader = csv.reader(file)
 header = next(csvreader)
 for row in csvreader:
     # there are some rows with empty pu_location_id
-    if row[3] != "":
+    if row[3] != "" and row[4] != "":
         key = {"pu_location_id": int(row[3])}
-        value = {"dispatching_base_num": str(row[0]), "pu_location_id": int(row[3]), "do_location_id": int(row[4])}
+        # value = {"dispatching_base_num": str(row[0]), "pu_location_id": int(row[3]), "do_location_id": int(row[4])}
+        value = {"vehicle_id": str(row[0]), "pu_location_id": int(row[3]), "do_location_id": int(row[4])}
         producer.send(KAFKA_TOPIC_F, value=value, key=key)
-        print(f"producing data {int(row[3])}")
+        print(f"producing key {value['pu_location_id']} show data {value['vehicle_id']}")
         sleep(1)
     

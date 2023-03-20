@@ -14,7 +14,8 @@ csvreader = csv.reader(file)
 header = next(csvreader)
 for row in csvreader:
     key = {"pu_location_id": int(row[5])}
-    value = {"vendor_id": str(row[0]), "pu_location_id": int(row[5]), "do_location_id": int(row[6])}
+    # value = {"vendor_id": str(row[0]), "pu_location_id": int(row[5]), "do_location_id": int(row[6])} 
+    value = {"vehicle_id": str(row[0]), "pu_location_id": int(row[5]), "do_location_id": int(row[6])}
     producer.send(KAFKA_TOPIC_G, value=value, key=key)
-    print(f"producing data {int(row[5])}")
+    print(f"producing key {value['pu_location_id']} show data {value['vehicle_id']}")
     sleep(1)
